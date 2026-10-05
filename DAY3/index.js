@@ -27,5 +27,3 @@ app.listen(PORT, () => {
     connectDB();
     console.log("server listening on " + PORT);
 })
-// trainbit124_db_user
-// hbdHLumiUWUv3O6R
