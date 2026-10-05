@@ -1,90 +1,97 @@
 const express = require("express");
 const router = express.Router();
+const Product = require("../models/product");
 
-let products = [
-    {
-        id: 1, 
-        name: "Laptop",
-        price: 50000
-    },
-    {
-        id: 2,
-        name: "Mobile",
-        price: 20000
-    },
-    {
-        id: 3,
-        name: "Charger",
-        price: 250
+router.get("", async (req, res) => {
+    try {
+        const products = await Product.find();
+        res.status(200).json(products);
+    } catch(err) {
+        res.status(500).json({
+            message: err.message,
+        })
     }
-];
-
-router.get("", (req, res) => {
-    res.send(products);
 });
 
-router.get("/:id", (req, res) => {
-    const id = req.params.id;
+router.get("/:id", async (req, res) => {
+    try {
+        const id = req.params.id;
 
-    const product = products.find((p) => p.id === Number(id));
+        const product = await Product.findById(id);
 
-    if (!product) {
-        return res.status(404).json({
-            message: "Product not found"
-        });
+        if (!product) {
+            return res.status(404).json({
+                message: "Product not found"
+            });
+        }
+
+        res.status(200).json(product);
+    } catch(err) {
+        res.status(500).json({
+            message: err.message
+        })
     }
-
-    res.status(200).json({
-        name: product.name,
-        price: product.price
-    });
 })
 
-router.post("", (req, res) => {
-    const {name, price} = req.body;
+router.post("", async (req, res) => {
+   try {
+        const {name, price} = req.body;
 
-    if (!name) {
-        return res.status(400).json({
-            message: "Name not found"
-        })
-    }
+        if (!name) {
+            return res.status(400).json({
+                message: "Name not found"
+            })
+        }
 
-    if (!price) {
-        return res.status(400).json({
-            message: "price not found"
-        })
-    }
+        if (!price) {
+            return res.status(400).json({
+                message: "price not found"
+            })
+        }
 
-    const product = {id: Date.now(), name, price};
-    products.push(product);
-
-    console.log(products)
-    return res.status(201).json(product);
+        const product = await Product.create(req.body)
+        return res.status(201).json(product);
+   } catch (err) {
+        res.status(500).json({
+            error: err.message
+        });
+   }
 });
 
-router.put("/:id", (req, res) => {
-    const id = req.params.id;
+router.put("/:id", async (req, res) => {
+    try {
+        const id = req.params.id;
 
-    const product = products.find((p) => p.id === Number(id));
+        const product = await Product.findByIdAndUpdate(id, req.body, {
+            returnDocument: "after", runValidators: true
+        });
+        if (!product) {
+            return res.status(404).json({
+                message: "Product not found"
+            });
+        }
+
+        res.status(200).json(product);
+    } catch(err) {
+        res.status(500).json({
+            message: err.message
+        });
+    }
+});
+
+router.delete("/:id", async (req, res) => {
+    const id = req.params.id;
+    const product = await Product.findByIdAndDelete(id);
+
     if (!product) {
         return res.status(404).json({
             message: "Product not found"
         });
     }
-
-    product.name = req.body.name ?? product.name;
-    product.price = req.body.price ?? product.price;
-
-    res.status(200).json(product);
-});
-
-router.delete("/:id", (req, res) => {
-    const id = req.params.id;
-    products = products.filter((p) => p.id != Number(id));
 
     res.status(200).json({
         message: "Product deleted successfully"
     })
-})
+}) 
 
 module.exports = router;

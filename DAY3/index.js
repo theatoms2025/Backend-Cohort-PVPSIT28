@@ -4,15 +4,23 @@ const connectDB = require("./config/db");
 const productsRoutes = require("./routes/product");
 
 const app = express();
-const PORT = process.env.PORT || 4000;
 
 dotenv.config();
 app.use(express.json());
+
+const PORT = process.env.PORT || 4000;
 
 app.get("/", (req, res) => {
     res.status(200).json({
         message: "working"
     });
+});
+
+app.use((req, res, next) => {
+    console.log(req.method);
+    console.log(req.url);
+
+    next();
 });
 
 app.use("/products", productsRoutes)
