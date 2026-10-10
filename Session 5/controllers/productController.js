@@ -43,7 +43,10 @@ exports.createProduct = async (req, res, next) => {
             })
         }
 
-        const product = await Product.create(req.body)
+        const product = await Product.create({
+            ...req.body, 
+            createdBy: req.user.id
+        })
         return res.status(201).json(product);
    } catch (err) {
         next(err);
@@ -54,15 +57,25 @@ exports.updateProduct = async (req, res, next) => {
     try {
         const id = req.params.id;
 
-        const product = await Product.findByIdAndUpdate(id, req.body, {
-            returnDocument: "after", runValidators: true
-        });
+        const product = await Product.findById(id);
         if (!product) {
             return res.status(404).json({
                 message: "Product not found"
             });
         }
 
+        if (String(product.createdBy) !== req.user.id) {
+            return res.status(401).json({
+                message: "U can change ur own products"
+            });
+        }
+
+        delete req.body.createdBy
+
+        await Product.findByIdAndUpdate(id, req.body, {
+            runValidators: true,
+            returnDocument: "after"
+        })
         res.status(200).json(product);
     } catch(err) {
         next(err);
