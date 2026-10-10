@@ -27,6 +27,15 @@ exports.getProduct = async (req, res, next) => {
     }
 }
 
+exports.getMyProducts = async (req, res, next) => {
+    try {
+        const products = await Product.find({createdBy: req.user.id})
+        res.status(200).json(products);
+    } catch(err) {
+        next(err);
+    }
+}
+
 exports.createProduct = async (req, res, next) => {
    try {
         const {name, price} = req.body;
@@ -72,11 +81,11 @@ exports.updateProduct = async (req, res, next) => {
 
         delete req.body.createdBy
 
-        await Product.findByIdAndUpdate(id, req.body, {
-            runValidators: true,
-            returnDocument: "after"
+        const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
+            returnDocument: "after",
+            runValidators: true
         })
-        res.status(200).json(product);
+        res.status(200).json(updatedProduct);
     } catch(err) {
         next(err);
     }
@@ -84,8 +93,8 @@ exports.updateProduct = async (req, res, next) => {
 
 exports.deleteProduct =  async (req, res, next) => {
     try {
-            const id = req.params.id;
-        const product = await Propduct.findByIdAndDelete(id);
+        const id = req.params.id;
+        const product = await Product.findById(id);
 
         if (!product) {
             return res.status(404).json({
@@ -93,6 +102,13 @@ exports.deleteProduct =  async (req, res, next) => {
             });
         }
 
+        if (String(product.createdBy) !== req.user.id) {
+            return res.status(401).json({
+                message: "u cant' delete other products"
+            });
+        }
+        
+        await product.deleteOne();
         res.status(200).json({
             message: "Product deleted successfully"
         })
